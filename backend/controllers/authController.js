@@ -34,6 +34,7 @@ export const signup = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -41,17 +42,34 @@ export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    const isPasswordCorrect = bycrypt.compare(password, user.password);
+    const isPasswordCorrect = await bycrypt.compare(password, user.password);
     if (!user || !isPasswordCorrect) {
-      return res.status(404).json({ message: "not found" });
+      return res.status(404).json({ message: "user or password invalid" });
     }
     generateTokenAndSetCookie(user._id, res);
     res.status(200).json({ message: "login", data: user });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 export const logout = async (req, res) => {
-  res.json({ data: "you hit logout button" });
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ message: "logout" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
